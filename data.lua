@@ -1,4 +1,4 @@
--- debug recipies to test things -test2
+-- debug recipies to test things
 
 --[[
 data:extend{
