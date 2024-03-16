@@ -1,0 +1,20 @@
+---------------------------------------------------------------------------------------------------
+Version: 0.1.2
+Date: 14. 03. 2024
+  Changes:
+    - Adjusted formatting for rate display; 
+      3 digits when < 1 per unit time
+      4 significant figures > 1 per unit time
+    - furnaces will now show the last used recipe if no recipe is currently active
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.1
+Date: 12. 03. 2024
+  Changes:
+    - Fixed thumbnail icon
+
+---------------------------------------------------------------------------------------------------
+Version: 0.1.0
+Date: 12. 03. 2024
+  Changes:
+    - Initial release
