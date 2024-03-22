@@ -94,6 +94,7 @@ function create_assembler_rate_gui(player, entity)
     -- we're going to need these, make them if they don't exist
     create_global_tables()
     -- the base frame, that everything goes into
+    if global.gui_data_by_player[player.index] then return end
     local gui_frame = player.gui.relative.add{type="frame", caption="Products", name="assembler-craft-rates-gui"}
 
     -- attach the new GUI to the correct machine type
