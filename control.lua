@@ -330,28 +330,41 @@ function get_rate_data_for_entity(entity)
     end
 
     for _, product in pairs(recipe.products) do
-        local expected_product = product.amount
-        local has_productivity = false
+        local product_min = 0
+        local product_max = 0
+        local product_probability = product.probability or 1
 
-        if product.amount_min and product.amount_max then
-            expected_product = (product.amount_min + product.amount_max)/2
-        end
+        local bonus_product = 0
+        local bonus_multiplier = entity.productivity_bonus
 
-        if product.probability then
-            expected_product = expected_product * product.probability
+        if product.amount then
+            product_min = product.amount
+            product_max = product.amount
+        elseif product.amount_min and product.amount_max then
+            product_min = product.amount_min
+            product_max = product.amount_max
         end
 
         if entity.productivity_bonus > 0 then
-            if product.catalyst_amount then
-                expected_product = 
-                expected_product * (
-                    1 + entity.productivity_bonus * 
-                    ((product.amount - product.catalyst_amount)/product.amount)
-                )
-            else
-                expected_product = expected_product * (1 + entity.productivity_bonus)
+            local amount_without_productivity = product.catalyst_amount or 0
+
+            if amount_without_productivity <= product_min then
+                bonus_product = ((product_min + product_max)/2 - amount_without_productivity)
+            elseif product_min < amount_without_productivity and amount_without_productivity < product_max then
+                -- find the range of possible bonus product values 
+                -- (min is always 1, since there must be some value where you will get one bonus product)
+                -- then find the percentages of rolls that will produce an extra productivity item
+                local prod_max = product_max - amount_without_productivity
+                local prod_min = 1
+
+                local prod_roll_weight = (product_max - amount_without_productivity) / (product_max-product_min+1)
+                bonus_product = (prod_max + prod_min)/2 * prod_roll_weight
+            elseif amount_without_productivity >= product_max then
+                bonus_product = 0
             end
         end
+
+        local expected_product = ((product_min + product_max)/2 + bonus_product*bonus_multiplier)*product_probability
 
         table.insert(out_products,
             {
