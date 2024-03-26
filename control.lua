@@ -93,6 +93,21 @@ end)
 function create_assembler_rate_gui(player, entity)
     -- we're going to need these, make them if they don't exist
     create_global_tables()
+
+    -- and if for some reason the player already has old GUI data, destroy both the data and the
+    -- GUI before attempting to create the new GUI
+    if global.gui_data_by_player[player.index] then
+        destroy_assembler_rate_gui(player, entity)
+    end
+
+    -- and just to be safe, we clean up old GUIs with the same name
+    -- there can only be one, after all
+    for _, gui in pairs(player.gui.relative.children) do
+        if gui.name == "assembler-craft-rates-gui" then
+            gui.destroy()
+        end
+    end
+
     -- the base frame, that everything goes into
     local gui_frame = player.gui.relative.add{type="frame", caption="Products", name="assembler-craft-rates-gui"}
 
@@ -305,7 +320,7 @@ function destroy_assembler_rate_gui(player, entity)
     if not global.gui_data_by_player[player.index] then return end
 
     --we don't need to track the associated entity anymore, remove it from the list
-    global.gui_data_by_player[player.index].gui.destroy()
+    --global.gui_data_by_player[player.index].gui.destroy()
     global.gui_data_by_player[player.index] = nil
 end
 

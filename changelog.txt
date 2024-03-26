@@ -1,4 +1,10 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.4
+Date: 26. 03. 2024
+  Changes:
+    - Attempt to clean up old GUI instances when the assembler panel is open, in case the
+      existing instance wasn't correctly cleaned up
+---------------------------------------------------------------------------------------------------
 Version: 0.1.3
 Date: 26. 03. 2024
   Changes:
