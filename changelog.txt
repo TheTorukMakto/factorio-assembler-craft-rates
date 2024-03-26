@@ -1,4 +1,11 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.3
+Date: 26. 03. 2024
+  Changes:
+    - Fixed crash when a recipe that had both a product output range and a catalyst amount was 
+      selected while a productivity bonus was active
+
+---------------------------------------------------------------------------------------------------
 Version: 0.1.2
 Date: 14. 03. 2024
   Changes:
