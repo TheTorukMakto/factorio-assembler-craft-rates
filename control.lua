@@ -3,14 +3,45 @@ script.on_init(function()
     create_global_tables()
 end)
 
+script.on_configuration_changed(function()
+    create_global_tables()
+    global.entity_blacklist = {
+        "se-delivery-cannon",
+        "se-delivery-cannon-weapon",
+        "se-energy-transmitter-emitter",
+        "se-energy-transmitter-injector",
+        "se-nexus",
+    }
+
+    local entity_blacklist_str = tostring(settings.startup["acr-blacklist"].value)
+
+    --remove all spaces in the string, people are bad at reading and might put spaces after the comma
+    entity_blacklist_str = entity_blacklist_str:gsub("%s+", "")
+
+    --and then split the string with commans and add each prototype-name to it's own blacklist
+    for prototype_name in string.gmatch(entity_blacklist_str, '([^,]+)') do
+        table.insert(global.entity_blacklist, prototype_name)
+    end
+end)
+
 function create_global_tables()
     if not global.gui_data_by_player            then global.gui_data_by_player = {}            end
     if not global.gui_data_by_player_persistent then global.gui_data_by_player_persistent = {} end
+    if not global.entity_blacklist              then global.entity_blacklist = {} end
 end
 
 -- should we make a GUI for this entity?
 function is_valid_gui_entity(entity)
-    return entity.type == "assembling-machine" or entity.type == "furnace"
+    -- first we check the type of entity, most things should not have the GUI
+    if not (entity.type == "assembling-machine" or entity.type == "furnace") then return false end
+
+    -- then, we check the entity name against the blacklist
+    for _, blacklist_name in pairs(global.entity_blacklist) do
+        if entity.name == blacklist_name then return false end
+    end
+
+    -- and if both those checks succeed then it is a valid entity
+    return true
 end
 
 script.on_event(defines.events.on_gui_opened, function(event)
@@ -181,7 +212,9 @@ function update_assembler_rate_gui(player, entity)
 
     -- populate the list of ingredients/products
     data_flow.clear()
-    create_gui_list_ui(data_flow, entity, button_state)
+    local has_recipe = create_gui_list_ui(data_flow, entity, button_state)
+
+    gui_data.gui.visible = has_recipe
 
     -- and whichever button is selected, radio-button style
     for k, button in ipairs(gui_data.button) do
@@ -198,27 +231,38 @@ function update_assembler_rate_gui(player, entity)
     global.gui_data_by_player_persistent[player.index].button_state = gui_data.button_state
 end
 
+-- creates the list of ingredients and products in the GUI
+-- returns a boolean indicating if the entity had a valid recipe
 function create_gui_list_ui(parent, entity, button_state)
     if get_recipe_name_safe(entity) then
         local recipe_ingredients, recipe_products = get_rate_data_for_entity(entity)
 
-        -- we only need to make the list if there's ingredients in the recipes (some modded recipies have)
-        -- (no ingredients, like K2's atmospheric condenser)
-        if #recipe_ingredients > 0 then
-            create_gui_list(parent, "Ingredients:", recipe_ingredients, button_state)
-        end
+        if #recipe_ingredients > 0 or #recipe_products > 0 then
+            -- we only need to make the list if there's ingredients in the recipes (some modded recipies have)
+            -- (no ingredients, like K2's atmospheric condenser)
+            if #recipe_ingredients > 0 then
+                create_gui_list(parent, "Ingredients:", recipe_ingredients, button_state)
+            end
 
-        if #recipe_ingredients > 0 and #recipe_products > 0 then
-            parent.add{type="line"}
-        end
+            if #recipe_ingredients > 0 and #recipe_products > 0 then
+                parent.add{type="line"}
+            end
 
-        -- and ditto for products (this isn't actually possible for vanilla recipies to have no products, but it stops)
-        -- (it from shitting itself if I ever add an item blacklist for mod crusher recipies/etc)
-        if #recipe_products > 0 then
-            create_gui_list(parent, "Products:", recipe_products, button_state)
+            -- and ditto for products (some mods have item void recipies, this makes them display properly)
+            if #recipe_products > 0 then
+                create_gui_list(parent, "Products:", recipe_products, button_state)
+            end
+
+            return true
+        else
+            local no_items_text = parent.add{type="label", caption="Curent recipe has no ingredients and no products"}
+
+            return false
         end
     else
         local no_recipe_text = parent.add{type="label", caption="No recipe selected"}
+
+        return false
     end
 end
 
@@ -320,7 +364,10 @@ function destroy_assembler_rate_gui(player, entity)
     if not global.gui_data_by_player[player.index] then return end
 
     --we don't need to track the associated entity anymore, remove it from the list
-    --global.gui_data_by_player[player.index].gui.destroy()
+    if global.gui_data_by_player[player.index].gui then
+        global.gui_data_by_player[player.index].gui.destroy()
+    end
+
     global.gui_data_by_player[player.index] = nil
 end
 
@@ -380,14 +427,18 @@ function get_rate_data_for_entity(entity)
         end
 
         local expected_product = ((product_min + product_max)/2 + bonus_product*bonus_multiplier)*product_probability
-
-        table.insert(out_products,
-            {
-                type = product.type,
-                name = product.name,
-                rate = expected_product * crafts_per_second
-            }
-        )
+        
+        -- some mods have item voids that use a recipe with a 0% chance to return products
+        -- we don't want to return a product for a dummy void item
+        if expected_product > 0 then
+            table.insert(out_products,
+                {
+                    type = product.type,
+                    name = product.name,
+                    rate = expected_product * crafts_per_second
+                }
+            )
+        end
     end
 
     return out_ingredients, out_products

@@ -1,4 +1,15 @@
 ---------------------------------------------------------------------------------------------------
+Version: 0.1.5
+Date: 31. 03. 2024
+  Changes:
+    - The craft rate GUI will now no longer show on some SE entities that are actually
+      an assembing machine in disguise (delivery cannons, beam emitters, etc)
+    - Added an entity blacklist startup setting to add other mod entities to this blacklist
+    - Recipies with zero ingredients and zero products will not display the GUI, because these
+      entites are probably some modded entity that isn't actually an assembler
+    - Void dummy items are no longer shown as a product in the GUI
+      (eg. K2's crushing machine or Angel's flarestack use void dummy items in their recipe)
+---------------------------------------------------------------------------------------------------
 Version: 0.1.4
 Date: 26. 03. 2024
   Changes:
